@@ -1,0 +1,5 @@
+{
+  "name": "FinGemini - AI Personal Finance",
+  "description": "A comprehensive financial management system featuring bank account tracking, transaction logging, category management, and AI-powered financial insights powered by Gemini 3 Flash.",
+  "requestFramePermissions": []
+}
