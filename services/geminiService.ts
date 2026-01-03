@@ -43,24 +43,20 @@ export const getQuickInsight = async (
   transactions: Transaction[],
   categories: Category[]
 ) => {
-  // 檢查環境變數
   const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === "undefined") {
-    return { status: "金鑰缺失", message: "請在系統環境中設定有效的 API_KEY。" };
+  if (!apiKey || apiKey === "undefined" || apiKey === "") {
+    return { status: "未授權", message: "AI 功能需要 API Key。請在專案設定中配置。" };
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-  const data = prepareDataString(accounts, transactions, categories);
-  
-  const prompt = `你是 FinGemini AI。請分析以下數據，給出一個狀態字（穩、旺、警、虛、危）以及一句 20 字內建議。
-    數據：${data}
-    請嚴格返回 JSON：{"status": "字", "message": "點評"}
-  `;
-
   try {
+    const ai = new GoogleGenAI({ apiKey });
+    const data = prepareDataString(accounts, transactions, categories);
+    
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents: `你是 FinGemini AI 理財助手。請分析以下數據，給出一個狀態字（穩、旺、警、虛、危）以及一句 20 字內建議。
+        數據：${data}
+        請嚴格返回 JSON：{"status": "字", "message": "點評"}`,
       config: { 
         responseMimeType: "application/json",
         responseSchema: {
@@ -74,12 +70,12 @@ export const getQuickInsight = async (
       }
     });
     
+    // 直接存取 .text 屬性，而非呼叫方法
     const text = response.text;
-    if (!text) throw new Error("AI 回傳內容為空");
-    return JSON.parse(text);
+    return JSON.parse(text || '{"status": "平", "message": "資料讀取中。"}');
   } catch (e: any) {
     console.error("AI Insight Error:", e);
-    return { status: "錯誤", message: `AI 連線失敗: ${e.message || "未知原因"}` };
+    return { status: "故障", message: "AI 服務暫時無法連線。" };
   }
 };
 
@@ -93,30 +89,27 @@ export const getFinancialAdvice = async (
 ): Promise<string> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === "undefined") {
-    return "❌ 找不到 API Key。請確認您的環境變數設定。";
+    return "❌ 系統未偵測到 API Key，請檢查環境變數配置。";
   }
 
-  const ai = new GoogleGenAI({ apiKey });
-  const data = prepareDataString(accounts, transactions, categories);
-
-  const prompt = `你是專業理財顧問。請針對以下數據提供深度診斷（繁體中文）：
-    ${data}
-    
-    請包含：
-    1. 收支現況點評
-    2. 資金風險警告
-    3. 具體的三個理財行動方案
-    
-    語氣要親切但專業。`;
-
   try {
+    const ai = new GoogleGenAI({ apiKey });
+    const data = prepareDataString(accounts, transactions, categories);
+
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
-      contents: prompt,
+      contents: `你是專業理財顧問。請針對以下數據提供深度診斷（繁體中文）：
+        ${data}
+        
+        請包含：
+        1. 目前財務現況總結
+        2. 潛在風險提示
+        3. 三個可執行的理財目標與建議`,
     });
-    return response.text || "AI 暫時無法生成建議，請稍後再試。";
+    
+    return response.text || "AI 暫時無法生成建議內容。";
   } catch (error: any) {
     console.error("AI Advice Error:", error);
-    return `❌ 分析中斷：${error.message || "連線逾時"}`;
+    return `❌ 分析中斷：${error.message || "網路連線異常"}`;
   }
 };
