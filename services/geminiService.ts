@@ -21,7 +21,7 @@ const prepareDataString = (accounts: BankAccount[], transactions: Transaction[],
   const categoriesMap = categories.reduce((acc, c) => ({ ...acc, [c.id]: c.name }), {} as Record<string, string>);
   const recentTxs = [...transactions]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    .slice(0, 15)
+    .slice(0, 10)
     .map(t => `${t.date}: ${categoriesMap[t.categoryId] || '其他'} - ${t.description} (${t.type === TransactionType.INCOME ? '+' : '-'}${t.amount})`);
 
   return `
@@ -29,8 +29,8 @@ const prepareDataString = (accounts: BankAccount[], transactions: Transaction[],
     - 總資產：${totalBalance} TWD
     - 本月總收入：${income} TWD
     - 本月總支出：${expense} TWD
-    - 帳戶列表：${accounts.map(a => `${a.name}(${a.balance})`).join(', ')}
-    - 最近流水紀錄：
+    - 帳戶：${accounts.map(a => `${a.name}(${a.balance})`).join(', ')}
+    - 最近流水：
     ${recentTxs.join('\n    ')}
   `;
 };
@@ -43,17 +43,18 @@ export const getQuickInsight = async (
   transactions: Transaction[],
   categories: Category[]
 ) => {
+  // 檢查環境變數
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === "undefined") {
-    return { status: "！", message: "請設定 API Key 以啟用 AI。" };
+    return { status: "金鑰缺失", message: "請在系統環境中設定有效的 API_KEY。" };
   }
 
   const ai = new GoogleGenAI({ apiKey });
   const data = prepareDataString(accounts, transactions, categories);
   
-  const prompt = `你是 FinGemini AI。請根據數據給出一個狀態字（穩、旺、警、虛、危）以及一句 20 字內建議。
+  const prompt = `你是 FinGemini AI。請分析以下數據，給出一個狀態字（穩、旺、警、虛、危）以及一句 20 字內建議。
     數據：${data}
-    請返回 JSON：{"status": "字", "message": "點評"}
+    請嚴格返回 JSON：{"status": "字", "message": "點評"}
   `;
 
   try {
@@ -72,10 +73,13 @@ export const getQuickInsight = async (
         }
       }
     });
-    return JSON.parse(response.text || '{"status": "平", "message": "歡迎使用。"}');
-  } catch (e) {
-    console.error("Quick Insight Error:", e);
-    return { status: "？", message: "AI 暫時無法回應。" };
+    
+    const text = response.text;
+    if (!text) throw new Error("AI 回傳內容為空");
+    return JSON.parse(text);
+  } catch (e: any) {
+    console.error("AI Insight Error:", e);
+    return { status: "錯誤", message: `AI 連線失敗: ${e.message || "未知原因"}` };
   }
 };
 
@@ -89,27 +93,30 @@ export const getFinancialAdvice = async (
 ): Promise<string> => {
   const apiKey = process.env.API_KEY;
   if (!apiKey || apiKey === "undefined") {
-    return "API Key 未設定。請確保在環境變數或 Github Secrets 中設定 API_KEY。";
+    return "❌ 找不到 API Key。請確認您的環境變數設定。";
   }
 
   const ai = new GoogleGenAI({ apiKey });
   const data = prepareDataString(accounts, transactions, categories);
 
-  const prompt = `你是資深理財顧問。請分析以下數據並提供繁體中文建議：
+  const prompt = `你是專業理財顧問。請針對以下數據提供深度診斷（繁體中文）：
     ${data}
     
-    1. 現狀分析
-    2. 潛在風險
-    3. 具體改善目標（至少3點）`;
+    請包含：
+    1. 收支現況點評
+    2. 資金風險警告
+    3. 具體的三個理財行動方案
+    
+    語氣要親切但專業。`;
 
   try {
     const response = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
     });
-    return response.text || "AI 暫時無法生成分析報告。";
-  } catch (error) {
-    console.error("Deep Advice Error:", error);
-    return "AI 連線失敗，請檢查網路或 API Key 狀態。";
+    return response.text || "AI 暫時無法生成建議，請稍後再試。";
+  } catch (error: any) {
+    console.error("AI Advice Error:", error);
+    return `❌ 分析中斷：${error.message || "連線逾時"}`;
   }
 };
