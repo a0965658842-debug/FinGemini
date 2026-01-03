@@ -40,9 +40,9 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
             <div className="w-24 h-24 bg-gradient-to-tr from-indigo-600 to-violet-600 rounded-3xl flex items-center justify-center text-white text-4xl mb-6 shadow-xl shadow-indigo-200 rotate-3">
               <i className="fas fa-robot"></i>
             </div>
-            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">AI 全方位財務診斷</h2>
+            <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">AI 智能財務顧問</h2>
             <p className="text-slate-500 max-w-xl leading-relaxed text-lg">
-              我們將分析您的 {accounts.length} 個帳戶與近期交易紀錄，透過高效能 AI 模型產出專屬您的個人化理財報告。
+              我們將分析您的 {accounts.length} 個帳戶與近期交易紀錄，透過 Gemini Flash 模型產出專屬您的個人化理財建議。
             </p>
           </div>
 
@@ -53,7 +53,7 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
                 className="group relative px-12 py-5 bg-slate-900 text-white rounded-2xl font-black text-xl shadow-2xl hover:bg-indigo-600 transition-all hover:scale-105 active:scale-95 overflow-hidden"
               >
                 <span className="relative z-10 flex items-center">
-                  啟動 AI 深度分析 <i className="fas fa-arrow-right ml-3 group-hover:translate-x-1 transition-transform"></i>
+                  啟動 AI 全面診斷 <i className="fas fa-arrow-right ml-3 group-hover:translate-x-1 transition-transform"></i>
                 </span>
                 <div className="absolute inset-0 bg-gradient-to-r from-indigo-600 to-violet-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
               </button>
@@ -69,8 +69,8 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
                   <i className="fas fa-brain text-4xl animate-bounce"></i>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">AI 正在精算中...</h3>
-              <p className="text-slate-400 font-medium">我們正在閱讀您的帳本數據並尋找優化空間</p>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">AI 分析進行中...</h3>
+              <p className="text-slate-400 font-medium">我們正在深度閱讀您的財務數據</p>
             </div>
           )}
 
@@ -82,7 +82,7 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
                   <span className="text-sm font-black text-slate-400 uppercase tracking-[0.2em]">診斷報告已生成</span>
                 </div>
                 <button onClick={startAnalysis} className="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-lg transition-colors">
-                  <i className="fas fa-redo-alt mr-2"></i>重新獲取建議
+                  <i className="fas fa-redo-alt mr-2"></i>重新分析
                 </button>
               </div>
               
@@ -100,21 +100,21 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
                     <i className="fas fa-check-circle"></i>
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">精準度</p>
-                  <p className="text-lg font-black text-slate-800">深度級</p>
+                  <p className="text-lg font-black text-slate-800">標準級</p>
                 </div>
                 <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm text-center">
                   <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i className="fas fa-shield-alt"></i>
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">資料安全</p>
-                  <p className="text-lg font-black text-slate-800">加密處理</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">隱私安全</p>
+                  <p className="text-lg font-black text-slate-800">端對端傳輸</p>
                 </div>
                 <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm text-center">
                   <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i className="fas fa-bolt"></i>
                   </div>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">模型</p>
-                  <p className="text-lg font-black text-slate-800">Gemini 3 Pro</p>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">處理引擎</p>
+                  <p className="text-lg font-black text-slate-800">Gemini Flash</p>
                 </div>
               </div>
             </div>
