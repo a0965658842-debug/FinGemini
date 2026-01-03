@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { User } from '../types';
+import { User, ViewType } from '../types';
 
 interface LayoutProps {
   children: React.ReactNode;
-  view: string;
-  setView: (v: any) => void;
+  view: ViewType;
+  setView: (v: ViewType) => void;
   onLogout: () => void;
   user: User;
   isDemo: boolean;
@@ -13,12 +13,12 @@ interface LayoutProps {
 
 const Layout: React.FC<LayoutProps> = ({ children, view, setView, onLogout, user, isDemo }) => {
   const menuItems = [
-    { id: 'dashboard', label: '總覽', icon: 'fa-chart-pie' },
-    { id: 'ai', label: 'AI 諮詢', icon: 'fa-brain' }, // 新增 AI 入口
-    { id: 'accounts', label: '帳戶', icon: 'fa-building-columns' },
-    { id: 'transactions', label: '紀錄', icon: 'fa-list-ul' },
-    { id: 'reports', label: '報表', icon: 'fa-chart-line' },
-    { id: 'tips', label: '扭蛋機', icon: 'fa-circle-dot' },
+    { id: 'dashboard' as ViewType, label: '總覽', icon: 'fa-chart-pie' },
+    { id: 'ai' as ViewType, label: 'AI 諮詢', icon: 'fa-brain' },
+    { id: 'accounts' as ViewType, label: '帳戶', icon: 'fa-building-columns' },
+    { id: 'transactions' as ViewType, label: '紀錄', icon: 'fa-list-ul' },
+    { id: 'reports' as ViewType, label: '報表', icon: 'fa-chart-line' },
+    { id: 'profile' as ViewType, label: '設定', icon: 'fa-user-gear' },
   ];
 
   return (
@@ -52,25 +52,27 @@ const Layout: React.FC<LayoutProps> = ({ children, view, setView, onLogout, user
         </nav>
 
         <div className="p-4 border-t border-slate-100">
-          <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 mb-4">
-            <div className="flex items-center space-x-3 mb-3">
-              <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center overflow-hidden">
-                <i className="fas fa-user text-slate-400"></i>
+          <button 
+            onClick={() => setView('profile')}
+            className="w-full p-3 rounded-2xl bg-slate-50 border border-slate-100 mb-4 hover:border-indigo-200 transition-all text-left group"
+          >
+            <div className="flex items-center space-x-3">
+              <div className="w-8 h-8 rounded-full bg-indigo-100 flex items-center justify-center overflow-hidden text-indigo-600 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+                <i className="fas fa-user text-xs"></i>
               </div>
               <div className="flex-1 truncate">
-                <p className="text-sm font-medium text-slate-900 truncate">{user.displayName}</p>
-                <p className="text-xs text-slate-500 truncate">{user.email}</p>
+                <p className="text-sm font-bold text-slate-900 truncate">{user.displayName}</p>
+                <p className="text-[10px] text-slate-400 truncate">{user.email}</p>
               </div>
             </div>
-            <button 
-              onClick={onLogout}
-              className="w-full text-xs font-semibold py-2 text-rose-500 hover:bg-rose-50 rounded-lg transition-colors"
-            >
-              登出
+          </button>
+          <div className="flex items-center justify-between px-2">
+            <div className={`px-2 py-0.5 text-[9px] font-black tracking-widest uppercase rounded-full ${isDemo ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
+              {isDemo ? 'DEMO' : 'PRO'}
+            </div>
+            <button onClick={onLogout} className="text-[10px] font-bold text-rose-400 hover:text-rose-600 transition-colors uppercase tracking-widest">
+              Logout
             </button>
-          </div>
-          <div className={`px-3 py-1 text-[10px] font-bold tracking-widest uppercase rounded-full inline-block ${isDemo ? 'bg-orange-100 text-orange-600' : 'bg-emerald-100 text-emerald-600'}`}>
-            {isDemo ? 'DEMO MODE' : 'PRO MODE'}
           </div>
         </div>
       </aside>
@@ -78,13 +80,16 @@ const Layout: React.FC<LayoutProps> = ({ children, view, setView, onLogout, user
       {/* Main Content */}
       <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative pb-20 md:pb-0">
         <header className="h-16 bg-white border-b border-slate-100 flex items-center justify-between px-6 md:px-10 z-10 shrink-0">
-          <h1 className="text-lg font-semibold text-slate-800">
-            {menuItems.find(m => m.id === view)?.label}
+          <h1 className="text-lg font-bold text-slate-800">
+            {menuItems.find(m => m.id === view)?.label || '設定'}
           </h1>
           <div className="flex items-center space-x-4">
-             <div className="md:hidden text-indigo-600 font-bold text-sm">FinGemini</div>
-            <button className="w-10 h-10 rounded-full hover:bg-slate-50 flex items-center justify-center text-slate-400">
-              <i className="fas fa-bell"></i>
+            <div className="md:hidden text-indigo-600 font-black text-sm tracking-tighter">FinGemini</div>
+            <button 
+              onClick={() => setView('profile')}
+              className="w-8 h-8 rounded-full bg-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
+            >
+              <i className="fas fa-gear text-sm"></i>
             </button>
           </div>
         </header>
@@ -96,22 +101,27 @@ const Layout: React.FC<LayoutProps> = ({ children, view, setView, onLogout, user
         </section>
 
         {/* Mobile Bottom Nav */}
-        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white border-t border-slate-200 px-2 py-3 flex justify-around items-center z-50">
-          {menuItems.map((item) => (
+        <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white/80 backdrop-blur-lg border-t border-slate-200 px-2 py-3 flex justify-around items-center z-50">
+          {menuItems.slice(0, 5).map((item) => (
             <button
               key={item.id}
               onClick={() => setView(item.id)}
               className={`flex flex-col items-center space-y-1 px-3 transition-all ${
-                view === item.id ? 'text-indigo-600' : 'text-slate-400'
+                view === item.id ? 'text-indigo-600 scale-110' : 'text-slate-400'
               }`}
             >
               <i className={`fas ${item.icon} text-lg`}></i>
-              <span className="text-[10px] font-bold uppercase tracking-tighter">{item.label}</span>
+              <span className="text-[9px] font-black uppercase tracking-tighter">{item.label}</span>
             </button>
           ))}
-          <button onClick={onLogout} className="flex flex-col items-center space-y-1 px-3 text-rose-400">
-            <i className="fas fa-sign-out-alt text-lg"></i>
-            <span className="text-[10px] font-bold uppercase tracking-tighter">登出</span>
+          <button 
+            onClick={() => setView('profile')}
+            className={`flex flex-col items-center space-y-1 px-3 transition-all ${
+                view === 'profile' ? 'text-indigo-600 scale-110' : 'text-slate-400'
+              }`}
+          >
+            <i className="fas fa-user-circle text-lg"></i>
+            <span className="text-[9px] font-black uppercase tracking-tighter">帳戶</span>
           </button>
         </nav>
       </main>

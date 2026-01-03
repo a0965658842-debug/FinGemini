@@ -33,7 +33,10 @@ export interface User {
   uid: string;
   email: string;
   displayName: string;
+  photoURL?: string;
 }
+
+export type ViewType = 'dashboard' | 'accounts' | 'transactions' | 'reports' | 'tips' | 'ai' | 'profile';
 
 export interface AppState {
   accounts: BankAccount[];

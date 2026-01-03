@@ -43,13 +43,13 @@ export const getQuickInsight = async (
   transactions: Transaction[],
   categories: Category[]
 ) => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === "undefined" || apiKey === "") {
+  if (!process.env.API_KEY || process.env.API_KEY === "undefined" || process.env.API_KEY === "") {
     return { status: "未授權", message: "AI 功能需要 API Key。請在專案設定中配置。" };
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Correctly initialize GoogleGenAI with named parameter
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const data = prepareDataString(accounts, transactions, categories);
     
     const response = await ai.models.generateContent({
@@ -70,7 +70,7 @@ export const getQuickInsight = async (
       }
     });
     
-    // 直接存取 .text 屬性，而非呼叫方法
+    // Directly access .text property from GenerateContentResponse
     const text = response.text;
     return JSON.parse(text || '{"status": "平", "message": "資料讀取中。"}');
   } catch (e: any) {
@@ -87,17 +87,18 @@ export const getFinancialAdvice = async (
   transactions: Transaction[],
   categories: Category[]
 ): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey || apiKey === "undefined") {
+  if (!process.env.API_KEY || process.env.API_KEY === "undefined") {
     return "❌ 系統未偵測到 API Key，請檢查環境變數配置。";
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Correctly initialize GoogleGenAI with named parameter
+    const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
     const data = prepareDataString(accounts, transactions, categories);
 
+    // Using gemini-3-pro-preview for complex text task (financial advice)
     const response = await ai.models.generateContent({
-      model: "gemini-3-flash-preview",
+      model: "gemini-3-pro-preview",
       contents: `你是專業理財顧問。請針對以下數據提供深度診斷（繁體中文）：
         ${data}
         
@@ -107,6 +108,7 @@ export const getFinancialAdvice = async (
         3. 三個可執行的理財目標與建議`,
     });
     
+    // Directly access .text property from GenerateContentResponse
     return response.text || "AI 暫時無法生成建議內容。";
   } catch (error: any) {
     console.error("AI Advice Error:", error);

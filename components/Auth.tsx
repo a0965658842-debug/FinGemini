@@ -1,11 +1,6 @@
 
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-import { 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
-  updateProfile 
-} from "firebase/auth";
 import { User } from '../types';
 
 interface AuthProps {
@@ -50,22 +45,26 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
     try {
       if (isRegistering) {
-        // 註冊新帳戶
-        const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
-        onLogin({
-          uid: userCredential.user.uid,
-          email: userCredential.user.email!,
-          displayName: userCredential.user.displayName! || email.split('@')[0]
-        }, false);
+        // 註冊新帳戶 - Using compat instance methods to resolve missing export errors
+        const userCredential = await auth.createUserWithEmailAndPassword(email, password);
+        if (userCredential.user) {
+          await userCredential.user.updateProfile({ displayName: email.split('@')[0] });
+          onLogin({
+            uid: userCredential.user.uid,
+            email: userCredential.user.email!,
+            displayName: userCredential.user.displayName! || email.split('@')[0]
+          }, false);
+        }
       } else {
-        // 登入帳戶
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        onLogin({
-          uid: userCredential.user.uid,
-          email: userCredential.user.email!,
-          displayName: userCredential.user.displayName! || email.split('@')[0]
-        }, false);
+        // 登入帳戶 - Using compat instance methods to resolve missing export errors
+        const userCredential = await auth.signInWithEmailAndPassword(email, password);
+        if (userCredential.user) {
+          onLogin({
+            uid: userCredential.user.uid,
+            email: userCredential.user.email!,
+            displayName: userCredential.user.displayName! || email.split('@')[0]
+          }, false);
+        }
       }
     } catch (err: any) {
       console.error("Auth Error Code:", err.code);

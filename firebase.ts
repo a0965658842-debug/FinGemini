@@ -1,10 +1,9 @@
 
-import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import firebase from "firebase/compat/app";
+import "firebase/compat/auth";
+import "firebase/compat/firestore";
 
 // Using inferred or any types for internal state variables to avoid issues with missing named type exports in strict build environments
-let app: any = null;
 let auth: any = null;
 let db: any = null;
 
@@ -22,9 +21,10 @@ const isValidConfig = (config: any) => {
 
 try {
   if (isValidConfig(firebaseConfig)) {
-    app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
+    // Initialize via compat layer to fix "no exported member" errors
+    const app = firebase.initializeApp(firebaseConfig);
+    auth = firebase.auth();
+    db = firebase.firestore();
     console.log("Firebase 服務已連線：目前使用正式資料庫。");
   } else {
     console.warn("偵測到未配置的 Firebase，系統自動切換至『離線/展示模式』。");

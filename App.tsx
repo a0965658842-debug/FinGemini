@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { db } from './firebase';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { User, BankAccount, Transaction, Category } from './types';
+import { User, BankAccount, Transaction, Category, ViewType } from './types';
 import { DEFAULT_CATEGORIES, DEMO_ACCOUNTS, DEMO_TRANSACTIONS } from './constants';
 import Auth from './components/Auth';
 import Layout from './components/Layout';
@@ -12,10 +12,11 @@ import Transactions from './components/Transactions';
 import Reports from './components/Reports';
 import FinancialGashapon from './components/FinancialGashapon';
 import AIConsultant from './components/AIConsultant';
+import Profile from './components/Profile';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<'dashboard' | 'accounts' | 'transactions' | 'reports' | 'tips' | 'ai'>('dashboard');
+  const [view, setView] = useState<ViewType>('dashboard');
   const [isDemo, setIsDemo] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
@@ -63,15 +64,13 @@ const App: React.FC = () => {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // 自動存檔機制：監聽 accounts 與 transactions 變動
+  // 自動存檔機制
   useEffect(() => {
     if (!user || isLoading) return;
 
     const syncData = async () => {
-      // 存入 LocalStorage
       localStorage.setItem(storageKey, JSON.stringify({ accounts, transactions }));
       
-      // 存入 Firestore
       if (!isDemo && db) {
         try {
           const userDocRef = doc(db, "users", user.uid);
@@ -86,7 +85,7 @@ const App: React.FC = () => {
       }
     };
 
-    const timeoutId = setTimeout(syncData, 1000); // 延遲存檔，避免頻繁寫入
+    const timeoutId = setTimeout(syncData, 1000);
     return () => clearTimeout(timeoutId);
   }, [accounts, transactions, user, isDemo, storageKey, isLoading]);
 
@@ -98,7 +97,7 @@ const App: React.FC = () => {
   const handleLogout = () => {
     setUser(null);
     setView('dashboard');
-    localStorage.removeItem('fingemini_demo_data'); // 登出時清空 Demo 暫存
+    localStorage.removeItem('fingemini_demo_data');
   };
 
   if (!user) return <Auth onLogin={handleLogin} />;
@@ -125,8 +124,10 @@ const App: React.FC = () => {
         return <FinancialGashapon />;
       case 'ai':
         return <AIConsultant accounts={accounts} transactions={transactions} categories={categories} />;
+      case 'profile':
+        return <Profile user={user} isDemo={isDemo} onUpdateUser={setUser} />;
       default:
-        return <Dashboard accounts={accounts} transactions={transactions} categories={categories} onNavigateToTips={() => setView('tips')} onNavigateToAI={() => setView('ai')} />;
+        return <Dashboard accounts={accounts} transactions={transactions} categories={categories} />;
     }
   };
 
