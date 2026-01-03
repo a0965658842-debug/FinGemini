@@ -11,10 +11,11 @@ import Accounts from './components/Accounts';
 import Transactions from './components/Transactions';
 import Reports from './components/Reports';
 import FinancialGashapon from './components/FinancialGashapon';
+import AIConsultant from './components/AIConsultant';
 
 const App: React.FC = () => {
   const [user, setUser] = useState<User | null>(null);
-  const [view, setView] = useState<'dashboard' | 'accounts' | 'transactions' | 'reports' | 'tips'>('dashboard');
+  const [view, setView] = useState<'dashboard' | 'accounts' | 'transactions' | 'reports' | 'tips' | 'ai'>('dashboard');
   const [isDemo, setIsDemo] = useState<boolean>(true);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   
@@ -28,7 +29,6 @@ const App: React.FC = () => {
     if (!user) return;
     setIsLoading(true);
 
-    // 1. Try Firestore if Pro Mode
     if (!isDemo && db) {
       try {
         const userDocRef = doc(db, "users", user.uid);
@@ -45,7 +45,6 @@ const App: React.FC = () => {
       }
     }
 
-    // 2. Fallback to Local Storage
     const savedData = localStorage.getItem(storageKey);
     if (savedData) {
       const parsed = JSON.parse(savedData);
@@ -63,14 +62,7 @@ const App: React.FC = () => {
 
   const saveData = useCallback(async (newAccounts: BankAccount[], newTransactions: Transaction[]) => {
     if (!user) return;
-
-    // Save to LocalStorage
-    localStorage.setItem(storageKey, JSON.stringify({ 
-      accounts: newAccounts, 
-      transactions: newTransactions 
-    }));
-
-    // Save to Firestore if Pro Mode
+    localStorage.setItem(storageKey, JSON.stringify({ accounts: newAccounts, transactions: newTransactions }));
     if (!isDemo && db) {
       try {
         const userDocRef = doc(db, "users", user.uid);
@@ -85,9 +77,7 @@ const App: React.FC = () => {
     }
   }, [isDemo, user, storageKey]);
 
-  useEffect(() => {
-    loadData();
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   const handleLogin = (u: User, demo: boolean) => {
     setUser(u);
@@ -99,18 +89,10 @@ const App: React.FC = () => {
     setView('dashboard');
   };
 
-  if (!user) {
-    return <Auth onLogin={handleLogin} />;
-  }
+  if (!user) return <Auth onLogin={handleLogin} />;
 
   const renderView = () => {
-    if (isLoading) {
-      return (
-        <div className="h-96 flex items-center justify-center">
-          <i className="fas fa-circle-notch fa-spin text-4xl text-indigo-600"></i>
-        </div>
-      );
-    }
+    if (isLoading) return <div className="h-96 flex items-center justify-center"><i className="fas fa-circle-notch fa-spin text-4xl text-indigo-600"></i></div>;
 
     switch (view) {
       case 'dashboard':
@@ -119,33 +101,20 @@ const App: React.FC = () => {
           transactions={transactions} 
           categories={categories}
           onNavigateToTips={() => setView('tips')}
+          onNavigateToAI={() => setView('ai')}
         />;
       case 'accounts':
-        return <Accounts 
-          accounts={accounts} 
-          setAccounts={(update) => {
-            const next = typeof update === 'function' ? update(accounts) : update;
-            setAccounts(next);
-            saveData(next, transactions);
-          }} 
-        />;
+        return <Accounts accounts={accounts} setAccounts={(u) => { const n = typeof u === 'function' ? u(accounts) : u; setAccounts(n); saveData(n, transactions); }} />;
       case 'transactions':
-        return <Transactions 
-          transactions={transactions} 
-          setTransactions={(update) => {
-            const next = typeof update === 'function' ? update(transactions) : update;
-            setTransactions(next);
-            saveData(accounts, next);
-          }} 
-          accounts={accounts} 
-          categories={categories} 
-        />;
+        return <Transactions transactions={transactions} setTransactions={(u) => { const n = typeof u === 'function' ? u(transactions) : u; setTransactions(n); saveData(accounts, n); }} accounts={accounts} categories={categories} />;
       case 'reports':
         return <Reports accounts={accounts} transactions={transactions} categories={categories} />;
       case 'tips':
         return <FinancialGashapon />;
+      case 'ai':
+        return <AIConsultant accounts={accounts} transactions={transactions} categories={categories} />;
       default:
-        return <Dashboard accounts={accounts} transactions={transactions} categories={categories} onNavigateToTips={() => setView('tips')} />;
+        return <Dashboard accounts={accounts} transactions={transactions} categories={categories} onNavigateToTips={() => setView('tips')} onNavigateToAI={() => setView('ai')} />;
     }
   };
 

@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-// Importing Auth functions from firebase/auth as standalone functions for the modular SDK.
+// Fix: Ensure the modular functions are correctly imported from the firebase/auth subpath.
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 

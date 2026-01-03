@@ -14,6 +14,7 @@ interface LayoutProps {
 const Layout: React.FC<LayoutProps> = ({ children, view, setView, onLogout, user, isDemo }) => {
   const menuItems = [
     { id: 'dashboard', label: '總覽', icon: 'fa-chart-pie' },
+    { id: 'ai', label: 'AI 諮詢', icon: 'fa-brain' }, // 新增 AI 入口
     { id: 'accounts', label: '帳戶', icon: 'fa-building-columns' },
     { id: 'transactions', label: '紀錄', icon: 'fa-list-ul' },
     { id: 'reports', label: '報表', icon: 'fa-chart-line' },

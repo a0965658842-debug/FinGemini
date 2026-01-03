@@ -1,66 +1,104 @@
-
 import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
 import { Transaction, BankAccount, Category, TransactionType } from "../types";
 
-// Using the Gemini API to get financial advice based on user transactions and accounts.
+/**
+ * 格式化數據供 AI 讀取
+ * 此函數不依賴登入狀態，僅依賴傳入的 accounts 與 transactions
+ */
+const prepareDataString = (accounts: BankAccount[], transactions: Transaction[], categories: Category[]) => {
+  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  
+  const currentMonthTxs = transactions.filter(t => {
+    const d = new Date(t.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  });
+  
+  const income = currentMonthTxs.filter(t => t.type === TransactionType.INCOME).reduce((sum, t) => sum + t.amount, 0);
+  const expense = currentMonthTxs.filter(t => t.type === TransactionType.EXPENSE).reduce((sum, t) => sum + t.amount, 0);
+  
+  const categoriesMap = categories.reduce((acc, c) => ({ ...acc, [c.id]: c.name }), {} as Record<string, string>);
+  const recentTxs = [...transactions]
+    .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    .slice(0, 15)
+    .map(t => `${t.date}: ${categoriesMap[t.categoryId] || '其他'} - ${t.description} (${t.type === TransactionType.INCOME ? '+' : '-'}${t.amount})`);
+
+  return `
+    目前財務數據報告：
+    - 總資產：${totalBalance} TWD
+    - 本月總收入：${income} TWD
+    - 本月總支出：${expense} TWD
+    - 帳戶分佈：${accounts.map(a => `${a.name}(餘額:${a.balance})`).join(', ')}
+    - 最近 15 筆流水紀錄：
+    ${recentTxs.join('\n    ')}
+  `;
+};
+
+/**
+ * 快速見解（用於 Dashboard）
+ */
+export const getQuickInsight = async (
+  accounts: BankAccount[],
+  transactions: Transaction[],
+  categories: Category[]
+) => {
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return { status: "？", message: "請在 GitHub Secrets 設定 GEMINI_API_KEY 以啟用 AI。" };
+
+  const ai = new GoogleGenAI({ apiKey });
+  const data = prepareDataString(accounts, transactions, categories);
+  
+  const prompt = `你是 FinGemini AI。分析以下財務數據，給出一個狀態字（穩、旺、警、虛、危）以及一句 20 字內建議。
+    數據：${data}
+    請嚴格返回 JSON：{"status": "字", "message": "點評"}
+  `;
+
+  try {
+    const response: GenerateContentResponse = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt,
+      config: { responseMimeType: "application/json" }
+    });
+    return JSON.parse(response.text || '{"status": "平", "message": "歡迎使用 FinGemini。"}');
+  } catch (e) {
+    console.error("Quick Insight Error:", e);
+    return { status: "！", message: "AI 忙碌中。" };
+  }
+};
+
+/**
+ * 深度分析（用於 AIConsultant）
+ */
 export const getFinancialAdvice = async (
   accounts: BankAccount[],
   transactions: Transaction[],
   categories: Category[]
 ): Promise<string> => {
-  // Always initialize GoogleGenAI with the API key from process.env.API_KEY directly as per guidelines.
-  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
-  
-  // Use 'gemini-3-pro-preview' for complex financial reasoning and analysis as per task type guidelines.
-  const model = "gemini-3-pro-preview";
+  const apiKey = process.env.API_KEY;
+  if (!apiKey) return "API Key 尚未設定，請檢查 GitHub Repository Secrets。";
 
-  const totalBalance = accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  const monthlyIncome = transactions
-    .filter(t => t.type === TransactionType.INCOME)
-    .reduce((sum, t) => sum + t.amount, 0);
-  const monthlyExpense = transactions
-    .filter(t => t.type === TransactionType.EXPENSE)
-    .reduce((sum, t) => sum + t.amount, 0);
+  const ai = new GoogleGenAI({ apiKey });
+  const data = prepareDataString(accounts, transactions, categories);
 
-  const expenseByCategory = transactions
-    .filter(t => t.type === TransactionType.EXPENSE)
-    .reduce((acc, t) => {
-      const cat = categories.find(c => c.id === t.categoryId)?.name || '未知';
-      acc[cat] = (acc[cat] || 0) + t.amount;
-      return acc;
-    }, {} as Record<string, number>);
-
-  const prompt = `
-    你是一位擁有 20 年經驗的頂級私人財務顧問。
-    請根據以下精確數據進行深度邏輯分析：
+  const prompt = `你是首席財務分析師。針對以下數據提供深度診斷：
+    ${data}
     
-    【當前資產概況】
-    - 總資產: $${totalBalance.toLocaleString()} TWD
-    - 本月總收入: $${monthlyIncome.toLocaleString()} TWD
-    - 本月總支出: $${monthlyExpense.toLocaleString()} TWD
+    內容包含：
+    1. 現況分析：評估目前的收支比與資金流向。
+    2. 風險提示：指出不合理的支出或資產配置風險。
+    3. 行動指南：3 個可執行的具體目標。
     
-    【支出結構分析】
-    ${JSON.stringify(expenseByCategory, null, 2)}
-    
-    請提供包含以下三個維度的專業建議：
-    1. 數據洞察：找出潛在的財務風險或異常支出（例如支出佔收入比例過高）。
-    2. 策略佈局：根據當前資產狀況，提供具體的資產配置建議。
-    3. 行動指南：針對下個月提出三個具體的理財改進動作。
-    
-    語言要求：專業、誠懇且富有啟發性。請使用繁體中文，總長度約 300 字。
-  `;
+    使用繁體中文，語氣權威且專業。`;
 
   try {
-    // Generate content using the model name and prompt directly in the call.
-    // The response is explicitly typed as GenerateContentResponse.
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model,
+      model: "gemini-3-pro-preview",
       contents: prompt,
     });
-    // Accessing the .text property directly from the GenerateContentResponse object.
-    return response.text || "分析結果生成失敗，請稍後再試。";
+    return response.text || "報告生成失敗，請稍後再試。";
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return "AI 顧問目前無法連線，請檢查網路設定或 API Key 配置。";
+    console.error("Deep Advice Error:", error);
+    return "AI 顧問暫時無法服務，請確認您的 API Key 是否有效。";
   }
 };

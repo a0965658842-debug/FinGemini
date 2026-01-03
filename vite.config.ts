@@ -1,14 +1,15 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // GitHub Pages 必須使用相對路徑以防止資源加載失敗（白色畫面）
-  base: './', 
+  // 使用相對路徑基底，這是解決 GitHub Pages 佈署後出現白畫面的關鍵
+  base: './',
   define: {
-    // Gemini API Key 透過環境變數注入（GitHub Secrets）
+    // 透過 define 注入 API KEY，Build 階段會從 GitHub Action 的 env.API_KEY 取得
     'process.env.API_KEY': JSON.stringify(process.env.API_KEY),
-    // Firebase 配置直接寫在程式碼中，方便開發且不具機密性風險（客戶端 Key 本身即公開）
+    // Firebase 配置直接寫在代碼中，方便遷移帳號後快速修改
     'process.env.FIREBASE_CONFIG': JSON.stringify({
       apiKey: "在此填入您的_FIREBASE_API_KEY",
       authDomain: "您的專案ID.firebaseapp.com",
@@ -19,17 +20,14 @@ export default defineConfig({
     })
   },
   build: {
+    outDir: 'dist',
     minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true,
-      },
-    },
     rollupOptions: {
       output: {
+        // 切分套件以優化載入速度
         manualChunks: {
-          vendor: ['react', 'react-dom', 'firebase', 'recharts'],
+          'vendor-core': ['react', 'react-dom'],
+          'vendor-utils': ['recharts', 'firebase/app', 'firebase/auth', 'firebase/firestore', '@google/genai'],
         },
       },
     },
