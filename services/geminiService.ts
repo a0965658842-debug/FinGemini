@@ -1,4 +1,5 @@
-import { GoogleGenAI, GenerateContentResponse } from "@google/genai";
+
+import { GoogleGenAI, GenerateContentResponse, Type } from "@google/genai";
 import { Transaction, BankAccount, Category, TransactionType } from "../types";
 
 /**
@@ -37,16 +38,15 @@ const prepareDataString = (accounts: BankAccount[], transactions: Transaction[],
 
 /**
  * 快速見解（用於 Dashboard）
+ * 使用免費版模型 gemini-3-flash-preview
  */
 export const getQuickInsight = async (
   accounts: BankAccount[],
   transactions: Transaction[],
   categories: Category[]
 ) => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) return { status: "？", message: "請在 GitHub Secrets 設定 GEMINI_API_KEY 以啟用 AI。" };
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Directly initialize with process.env.API_KEY as per guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const data = prepareDataString(accounts, transactions, categories);
   
   const prompt = `你是 FinGemini AI。分析以下財務數據，給出一個狀態字（穩、旺、警、虛、危）以及一句 20 字內建議。
@@ -58,8 +58,20 @@ export const getQuickInsight = async (
     const response: GenerateContentResponse = await ai.models.generateContent({
       model: "gemini-3-flash-preview",
       contents: prompt,
-      config: { responseMimeType: "application/json" }
+      config: { 
+        responseMimeType: "application/json",
+        // Using responseSchema for robust JSON output as recommended
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            status: { type: Type.STRING, description: '財務狀態字' },
+            message: { type: Type.STRING, description: '理財點評' }
+          },
+          required: ["status", "message"]
+        }
+      }
     });
+    // Access .text property directly instead of calling it as a method
     return JSON.parse(response.text || '{"status": "平", "message": "歡迎使用 FinGemini。"}');
   } catch (e) {
     console.error("Quick Insight Error:", e);
@@ -69,16 +81,15 @@ export const getQuickInsight = async (
 
 /**
  * 深度分析（用於 AIConsultant）
+ * 使用 gemini-3-pro-preview 進行複雜理財諮詢
  */
 export const getFinancialAdvice = async (
   accounts: BankAccount[],
   transactions: Transaction[],
   categories: Category[]
 ): Promise<string> => {
-  const apiKey = process.env.API_KEY;
-  if (!apiKey) return "API Key 尚未設定，請檢查 GitHub Repository Secrets。";
-
-  const ai = new GoogleGenAI({ apiKey });
+  // Directly initialize with process.env.API_KEY as per guidelines
+  const ai = new GoogleGenAI({ apiKey: process.env.API_KEY });
   const data = prepareDataString(accounts, transactions, categories);
 
   const prompt = `你是首席財務分析師。針對以下數據提供深度診斷：
@@ -93,9 +104,11 @@ export const getFinancialAdvice = async (
 
   try {
     const response: GenerateContentResponse = await ai.models.generateContent({
-      model: "gemini-3-pro-preview",
+      // Upgraded to gemini-3-pro-preview for complex reasoning tasks
+      model: 'gemini-3-pro-preview',
       contents: prompt,
     });
+    // Access .text property directly
     return response.text || "報告生成失敗，請稍後再試。";
   } catch (error) {
     console.error("Deep Advice Error:", error);

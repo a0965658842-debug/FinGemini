@@ -42,7 +42,7 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
             </div>
             <h2 className="text-4xl font-black text-slate-900 mb-4 tracking-tight">AI 全方位財務診斷</h2>
             <p className="text-slate-500 max-w-xl leading-relaxed text-lg">
-              我們將分析您的 {accounts.length} 個帳戶與近期交易紀錄，透過 Gemini 3 Pro 產出專屬您的個人化理財報告。
+              我們將分析您的 {accounts.length} 個帳戶與近期交易紀錄，透過高效能 AI 模型產出專屬您的個人化理財報告。
             </p>
           </div>
 
@@ -69,7 +69,7 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
                   <i className="fas fa-brain text-4xl animate-bounce"></i>
                 </div>
               </div>
-              <h3 className="text-xl font-bold text-slate-800 mb-2">Gemini 正在精算中...</h3>
+              <h3 className="text-xl font-bold text-slate-800 mb-2">AI 正在精算中...</h3>
               <p className="text-slate-400 font-medium">我們正在閱讀您的帳本數據並尋找優化空間</p>
             </div>
           )}
@@ -100,21 +100,21 @@ const AIConsultant: React.FC<AIConsultantProps> = ({ accounts, transactions, cat
                     <i className="fas fa-check-circle"></i>
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">精準度</p>
-                  <p className="text-lg font-black text-slate-800">最高級</p>
+                  <p className="text-lg font-black text-slate-800">深度級</p>
                 </div>
                 <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm text-center">
                   <div className="w-10 h-10 bg-indigo-50 text-indigo-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i className="fas fa-shield-alt"></i>
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">資料安全</p>
-                  <p className="text-lg font-black text-slate-800">本地處理</p>
+                  <p className="text-lg font-black text-slate-800">加密處理</p>
                 </div>
                 <div className="p-6 bg-white rounded-3xl border border-slate-100 shadow-sm text-center">
                   <div className="w-10 h-10 bg-amber-50 text-amber-600 rounded-xl flex items-center justify-center mx-auto mb-3">
                     <i className="fas fa-bolt"></i>
                   </div>
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">模型</p>
-                  <p className="text-lg font-black text-slate-800">Pro 3.0</p>
+                  <p className="text-lg font-black text-slate-800">Gemini 3 Pro</p>
                 </div>
               </div>
             </div>

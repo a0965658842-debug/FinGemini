@@ -1,13 +1,12 @@
-import { initializeApp } from "firebase/app";
-import type { FirebaseApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import type { Auth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
-import type { Firestore } from "firebase/firestore";
 
-let app: FirebaseApp | null = null;
-let auth: Auth | null = null;
-let db: Firestore | null = null;
+import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
+import { getFirestore } from "firebase/firestore";
+
+// Using inferred or any types for internal state variables to avoid issues with missing named type exports in strict build environments
+let app: any = null;
+let auth: any = null;
+let db: any = null;
 
 // 從 vite.config.ts 的 define 中取得配置
 const firebaseConfig = process.env.FIREBASE_CONFIG as any;

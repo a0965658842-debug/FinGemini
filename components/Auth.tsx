@@ -1,7 +1,6 @@
 
 import React, { useState } from 'react';
 import { auth } from '../firebase';
-// Fix: Ensure the modular functions are correctly imported from the firebase/auth subpath.
 import { 
   signInWithEmailAndPassword, 
   createUserWithEmailAndPassword, 
@@ -30,8 +29,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       return;
     }
 
+    // 檢查 Firebase 是否已初始化
     if (!auth) {
-      setError('Firebase 未正確配置，請使用展示模式。');
+      setError('Firebase 未配置：請先在代碼中設定 Firebase API Key，或直接使用下方「試用展示模式」。');
       return;
     }
 
@@ -40,37 +40,45 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
       return;
     }
 
+    if (password.length < 6) {
+      setError('密碼長度至少需要 6 位數');
+      return;
+    }
+
     setLoading(true);
     setError('');
 
     try {
       if (isRegistering) {
-        // Using createUserWithEmailAndPassword modular function which takes the auth instance.
+        // 註冊新帳戶
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-        // Using updateProfile modular function which takes the user object.
         await updateProfile(userCredential.user, { displayName: email.split('@')[0] });
         onLogin({
           uid: userCredential.user.uid,
           email: userCredential.user.email!,
-          displayName: userCredential.user.displayName!
+          displayName: userCredential.user.displayName! || email.split('@')[0]
         }, false);
       } else {
-        // Using signInWithEmailAndPassword modular function which takes the auth instance.
+        // 登入帳戶
         const userCredential = await signInWithEmailAndPassword(auth, email, password);
         onLogin({
           uid: userCredential.user.uid,
           email: userCredential.user.email!,
-          displayName: userCredential.user.displayName!
+          displayName: userCredential.user.displayName! || email.split('@')[0]
         }, false);
       }
     } catch (err: any) {
-      console.error(err);
-      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+      console.error("Auth Error Code:", err.code);
+      if (err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
         setError('郵件或密碼錯誤');
       } else if (err.code === 'auth/email-already-in-use') {
-        setError('此電子郵件已註冊');
+        setError('此電子郵件已註冊，請直接登入');
+      } else if (err.code === 'auth/invalid-email') {
+        setError('電子郵件格式不正確');
+      } else if (err.code === 'auth/network-request-failed') {
+        setError('網路連線失敗，請檢查網路狀態');
       } else {
-        setError('認證失敗：' + err.message);
+        setError('認證失敗：' + (err.message || '未知錯誤'));
       }
     } finally {
       setLoading(false);
@@ -91,7 +99,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
           </div>
           <h1 className="text-4xl font-black mb-6 tracking-tight">AI 驅動的財務自由</h1>
           <p className="text-indigo-100 text-lg opacity-90 leading-relaxed">
-            FinGemini 使用最新的 Gemini 3 Pro 模型，為您的每筆支出提供專業級的理財分析。
+            FinGemini 使用高效 AI 模型，為您的每筆支出提供即時的理財分析與優化建議。
           </p>
         </div>
       </div>
@@ -105,9 +113,9 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
 
           <div className="space-y-6">
             {error && (
-              <div className="p-4 bg-rose-50 text-rose-500 text-sm rounded-xl border border-rose-100 flex items-center">
-                <i className="fas fa-exclamation-circle mr-3"></i>
-                {error}
+              <div className="p-4 bg-rose-50 text-rose-500 text-sm rounded-xl border border-rose-100 flex items-start">
+                <i className="fas fa-exclamation-circle mr-3 mt-0.5"></i>
+                <span>{error}</span>
               </div>
             )}
 
@@ -118,7 +126,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   type="email" 
                   value={email}
                   onChange={e => setEmail(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                   placeholder="name@email.com"
                 />
               </div>
@@ -128,7 +136,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
                   type="password" 
                   value={password}
                   onChange={e => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none"
+                  className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:ring-2 focus:ring-indigo-500/20 outline-none transition-all"
                   placeholder="••••••••"
                 />
               </div>
@@ -140,7 +148,7 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               className="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all flex items-center justify-center space-x-2 disabled:opacity-50"
             >
               {loading && <i className="fas fa-circle-notch fa-spin"></i>}
-              <span>{isRegistering ? '註冊帳戶' : '登入正式系統'}</span>
+              <span>{isRegistering ? '立即註冊' : '登入正式系統'}</span>
             </button>
             
             <div className="relative flex items-center py-2">
@@ -153,19 +161,26 @@ const Auth: React.FC<AuthProps> = ({ onLogin }) => {
               onClick={() => handleAuth(true)}
               className="w-full bg-indigo-50 text-indigo-600 py-4 rounded-xl font-bold hover:bg-indigo-100 transition-all border border-indigo-100"
             >
-              試用展示模式 (無須帳號)
+              直接體驗 (展示模式)
             </button>
 
-            <div className="text-center">
+            <div className="text-center pt-2">
               <button 
-                onClick={() => setIsRegistering(!isRegistering)}
-                className="text-sm font-semibold text-slate-500 hover:text-indigo-600"
+                onClick={() => {
+                  setIsRegistering(!isRegistering);
+                  setError('');
+                }}
+                className="text-sm font-semibold text-slate-500 hover:text-indigo-600 transition-colors"
               >
                 {isRegistering ? '已有帳戶？點此登入' : '還沒有帳戶？點此註冊'}
               </button>
             </div>
           </div>
         </div>
+        
+        <p className="mt-8 text-xs text-slate-400 font-medium">
+          註：註冊前請確認 <code className="bg-slate-200 px-1 rounded">vite.config.ts</code> 已填入有效的 Firebase 配置。
+        </p>
       </div>
     </div>
   );
