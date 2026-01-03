@@ -4,7 +4,7 @@ import react from '@vitejs/plugin-react';
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
-  // 使用相對路徑基底，這是解決 GitHub Pages 佈署後出現白畫面的關鍵
+  // 確保使用相對路徑，防止 GitHub Pages 部署後路徑錯誤導致白畫面
   base: './',
   define: {
     // 透過 define 注入 API KEY，Build 階段會從 GitHub Action 的 env.API_KEY 取得
